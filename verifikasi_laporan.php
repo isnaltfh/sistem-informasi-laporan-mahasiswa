@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<?php
+require '../koneksi.php';
+
+if (isset($_POST['update_status'])) {
+  $id = $_POST['id'];
+  $status = $_POST['status'];
+
+  $query = mysqli_query($conn, "UPDATE laporan SET status='$status' WHERE id='$id'");
+  if ($query) {
+    echo "<script>alert('Status berhasil diperbarui!'); window.location.href='admin.php?url=verifikasi_laporan';</script>";
+  } else {
+    echo "<script>alert('Gagal memperbarui status: " . mysqli_error($conn) . "');</script>";
+  }
+}
+?>
+
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -54,13 +70,13 @@
                   <tbody>
                     <?php
                     require '../koneksi.php';
-                    $sql = mysqli_query($conn, "SELECT * FROM laporan ORDER BY tgl_laporan DESC");
-                    if (!$sql) {
+                    $sqli = mysqli_query($conn, "SELECT * FROM laporan ORDER BY tgl_laporan DESC");
+                    if (!$sqli) {
                       echo "<tr><td colspan='6'>Gagal mengambil data: " . mysqli_error($conn) . "</td></tr>";
-                    } elseif (mysqli_num_rows($sql) === 0) {
+                    } elseif (mysqli_num_rows($sqli) === 0) {
                       echo "<tr><td colspan='6'>Belum ada laporan.</td></tr>";
                     } else {
-                      while ($data = mysqli_fetch_array($sql)) {
+                      while ($data = mysqli_fetch_array($sqli)) {
                         ?>
                         <tr>
                           <td><?= htmlspecialchars($data['tgl_laporan']) ?></td>
@@ -74,21 +90,25 @@
                             <?php endif; ?>
                           </td>
                           <td>
-                            <form class="status-form" method="post">
+                            <!-- Fixed: Properly formatted form for each row -->
+                            <form method="post" action="">
                               <input type="hidden" name="id" value="<?= $data['id'] ?>">
-                              <select class="form-control status-select" name="status" data-id="<?= $data['id'] ?>">
-                                <option value="Diajukan" <?= $data['status'] === 'Diajukan' ? 'selected' : '' ?>>Diajukan
+                              <select class="form-control" name="status">
+                                <option value="Diajukan" <?= ($data['status'] === 'Diajukan') ? 'selected' : '' ?>>Diajukan
                                 </option>
-                                <option value="Proses" <?= $data['status'] === 'Proses' ? 'selected' : '' ?>>Proses</option>
-                                <option value="Ditolak" <?= $data['status'] === 'Ditolak' ? 'selected' : '' ?>>Ditolak</option>
-                                <option value="Selesai" <?= $data['status'] === 'Selesai' ? 'selected' : '' ?>>Selesai</option>
+                                <option value="Proses" <?= ($data['status'] === 'Proses') ? 'selected' : '' ?>>Proses</option>
+                                <option value="Ditolak" <?= ($data['status'] === 'Ditolak') ? 'selected' : '' ?>>Ditolak
+                                </option>
+                                <option value="Selesai" <?= ($data['status'] === 'Selesai') ? 'selected' : '' ?>>Selesai
+                                </option>
                               </select>
-                            </form>
                           </td>
                           <td>
-                            <button class="btn btn-primary btn-sm update-btn" data-id="<?= $data['id'] ?>">
+                            <!-- Fixed: Added name attribute to the button -->
+                            <button type="submit" name="update_status" class="btn btn-primary btn-sm">
                               Update Status
                             </button>
+                            </form>
                           </td>
                         </tr>
                         <?php
@@ -167,7 +187,7 @@
           "lengthMenu": "Tampilkan _MENU_ data per halaman",
           "zeroRecords": "Data tidak ditemukan",
           "info": "Menampilkan halaman _PAGE_ dari _PAGES_",
-          "infoEmpty": "Tidak ada data tersedia",
+          Empty": "Tidak ada data tersedia",
           "infoFiltered": "(difilter dari _MAX_ total data)",
           "paginate": {
             "first": "Pertama",
@@ -176,45 +196,6 @@
             "previous": "Sebelumnya"
           }
         }
-      });
-
-      // Event handler untuk tombol update
-      $('.update-btn').click(function () {
-        const id = $(this).data('id');
-        const form = $('form.status-form').has(`input[value="${id}"]`);
-        const status = form.find('.status-select').val();
-
-        // Nonaktifkan tombol selama update
-        $(this).prop('disabled', true).php('<i class="fas fa-spinner fa-spin"></i> Proses...');
-
-        $.ajax({
-          url: 'update_status.php',
-          method: 'POST',
-          dataType: 'json',
-          data: {
-            id: id,
-            status: status
-          },
-          success: function (response) {
-            if (response.success) {
-              // Tampilkan pesan sukses
-              $('#status-update-message').text('Status berhasil diperbarui!').slideDown();
-              setTimeout(function () {
-                $('#status-update-message').slideUp();
-              }, 3000);
-            } else {
-              // Tampilkan pesan error
-              alert('Gagal memperbarui status: ' + response.message);
-            }
-          },
-          error: function () {
-            alert('Terjadi kesalahan. Gagal mengupdate status.');
-          },
-          complete: function () {
-            // Aktifkan kembali tombol
-            $('.update-btn').prop('disabled', false).php('Update Status');
-          }
-        });
       });
     });
   </script>
